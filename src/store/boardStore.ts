@@ -1,13 +1,19 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { Board } from '@/types/board';
+import { Board, Todo } from '@/types/board';
 
 interface BoardState {
   boards: Board[];
   addBoard: (board: Board) => void;
   updateBoard: (updatedBoard: Board) => void;
   deleteBoard: (id: number) => void;
-  reorderBoards: (startIndex: number, endIndex: number) => void;
+  moveTodo: (
+    sourceBoardId: number,
+    destinationBoardId: number,
+    todo: Todo,
+    destinationIndex: number,
+  ) => void;
+  moveBoard: (dragIndex: number, hoverIndex: number) => void;
 }
 
 const useBoardStore = create<BoardState>()(
@@ -28,12 +34,36 @@ const useBoardStore = create<BoardState>()(
         set((state: BoardState) => ({
           boards: state.boards.filter((board: Board) => board.id !== id),
         })),
-      reorderBoards: (startIndex: number, endIndex: number) => {
-        const boards: Board[] = Array.from(get().boards);
-        const [removed] = boards.splice(startIndex, 1);
-        boards.splice(endIndex, 0, removed);
-        set({ boards });
-      },
+      moveTodo: (
+        sourceBoardId: number,
+        destinationBoardId: number,
+        todo: Todo,
+        destinationIndex: number,
+      ) =>
+        set((state) => {
+          const boards = state.boards.map((board) => {
+            if (board.id === sourceBoardId) {
+              return {
+                ...board,
+                todos: board.todos.filter((t) => t.id !== todo.id),
+              };
+            }
+            if (board.id === destinationBoardId) {
+              const newTodos = Array.from(board.todos);
+              newTodos.splice(destinationIndex, 0, todo);
+              return { ...board, todos: newTodos };
+            }
+            return board;
+          });
+          return { boards };
+        }),
+      moveBoard: (dragIndex: number, hoverIndex: number) =>
+        set((state) => {
+          const updatedBoards = [...state.boards];
+          const [movedBoard] = updatedBoards.splice(dragIndex, 1);
+          updatedBoards.splice(hoverIndex, 0, movedBoard);
+          return { boards: updatedBoards };
+        }),
     }),
     {
       name: 'board-storage',

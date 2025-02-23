@@ -1,23 +1,85 @@
-// src/components/boards/TodoItem.tsx
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Board, Todo } from '@/types/board';
-import {
-  useDrag,
-  useDrop,
-  DragSourceMonitor,
-  DropTargetMonitor,
-} from 'react-dnd';
+import { useDrag, useDrop } from 'react-dnd';
 import useBoardStore from '@/store/boardStore';
+
+interface DragItem {
+  index: number;
+  todo: Todo;
+  boardId: number;
+  type: string;
+}
 
 interface TodoItemProps {
   board: Board;
   todo: Todo;
+  index: number;
+  moveTodoInBoard: (dragIndex: number, hoverIndex: number) => void;
+  moveTodoAnotherBoard: (
+    sourceIndex: number,
+    sourceBoardId: number,
+    destinationBoardId: number,
+    todo: Todo,
+    destinationIndex: number,
+  ) => void;
 }
 
-const TodoItem: React.FC<TodoItemProps> = ({ board, todo }) => {
+const TodoItem: React.FC<TodoItemProps> = ({
+  board,
+  todo,
+  index,
+  moveTodoInBoard,
+  moveTodoAnotherBoard,
+}) => {
   const updateBoard = useBoardStore((state) => state.updateBoard);
   const [isEditing, setIsEditing] = useState(false);
   const [newContent, setNewContent] = useState(todo.content);
+
+  const ref = useRef<HTMLDivElement>(null);
+
+  const [{ isDragging }, drag] = useDrag({
+    type: 'TODO',
+    item: { index, todo, boardId: board.id },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const [, drop] = useDrop({
+    accept: 'TODO',
+    hover: (draggedItem: DragItem, monitor) => {
+      if (!ref.current) return;
+      if (draggedItem.boardId === board.id && draggedItem.index !== index) {
+        moveTodoInBoard(draggedItem.index, index);
+        draggedItem.index = index;
+      }
+    },
+    drop: (draggedItem: DragItem, monitor) => {
+      if (draggedItem.boardId !== board.id) {
+        const hoverBoundingRect = ref.current?.getBoundingClientRect();
+        const clientOffset = monitor.getClientOffset();
+
+        if (!hoverBoundingRect || !clientOffset) return;
+
+        const hoverMiddleY =
+          (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+        const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+
+        const destinationIndex =
+          hoverClientY < hoverMiddleY ? index : index + 1;
+
+        moveTodoAnotherBoard(
+          draggedItem.index,
+          draggedItem.boardId,
+          board.id,
+          draggedItem.todo,
+          destinationIndex,
+        );
+        draggedItem.boardId = board.id;
+      }
+    },
+  });
+  drag(drop(ref));
 
   const handleDeleteTodo = () => {
     const updatedTodos = board.todos.filter((t) => t.id !== todo.id);
@@ -36,7 +98,11 @@ const TodoItem: React.FC<TodoItemProps> = ({ board, todo }) => {
   };
 
   return (
-    <div className="border p-2 rounded mb-1 flex items-center">
+    <div
+      ref={ref}
+      style={{ opacity: isDragging ? 0.5 : 1, cursor: 'grab' }}
+      className="h-20 border p-2 rounded mb-1 flex items-center bg-white shadow-md "
+    >
       {isEditing ? (
         <>
           <input

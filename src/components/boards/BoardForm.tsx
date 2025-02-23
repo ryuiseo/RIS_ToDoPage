@@ -17,7 +17,7 @@ const BoardForm: React.FC<boardFormProps> = ({
         onChange={(e) => setBoardTitle(e.target.value)}
         className="border p-2 mr-2"
       />
-      <button type="submit" className="bg-blue-500 text-black p-2 rounded">
+      <button type="submit" className="bg-blue-300 text-black p-2 rounded">
         보드 생성하기
       </button>
     </form>
