@@ -7,6 +7,8 @@ import useBoardStore from "@/store/boardStore";
 const MainPage = () => {
   const boards = useBoardStore((state) => state.boards);
   const addboards = useBoardStore((state) => state.addBoard);
+  const undo = useBoardStore((state) => state.undo);
+  const redo = useBoardStore((state) => state.redo);
   const [boardTitle, setBoardTitle] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -37,6 +39,14 @@ const MainPage = () => {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-4 mt-20">To-Do List</h1>
+      <div className="flex gap-2">
+        <button onClick={undo} className="bg-gray-300 px-3 py-1 rounded">
+          실행취소
+        </button>
+        <button onClick={redo} className="bg-gray-300 px-3 py-1 rounded">
+          재실행
+        </button>
+      </div>
       <section className="mt-8 mb-4">
         <h2 className="text-xl mb-2">새로운 보드를 등록하세요!</h2>
         <BoardForm

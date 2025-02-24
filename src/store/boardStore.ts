@@ -1,9 +1,11 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { Board, Todo } from '@/types/board';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { Board, Todo } from "@/types/board";
 
 interface BoardState {
   boards: Board[];
+  past: Board[][];
+  future: Board[][];
   addBoard: (board: Board) => void;
   updateBoard: (updatedBoard: Board) => void;
   deleteBoard: (id: number) => void;
@@ -11,34 +13,50 @@ interface BoardState {
     sourceBoardId: number,
     destinationBoardId: number,
     todo: Todo,
-    destinationIndex: number,
+    destinationIndex: number
   ) => void;
   moveBoard: (dragIndex: number, hoverIndex: number) => void;
+  undo: () => void;
+  redo: () => void;
+  saveHistory: () => void;
 }
 
 const useBoardStore = create<BoardState>()(
   persist<BoardState>(
     (set, get) => ({
       boards: [],
-      addBoard: (board: Board) =>
-        set((state: BoardState) => ({
-          boards: [...state.boards, board],
-        })),
-      updateBoard: (updatedBoard: Board) =>
-        set((state: BoardState) => ({
-          boards: state.boards.map((board: Board) =>
-            board.id === updatedBoard.id ? updatedBoard : board,
+      past: [],
+      future: [],
+      saveHistory: () => {
+        const currentBoards = get().boards;
+        set((state) => ({
+          past: [...state.past, currentBoards],
+          future: [],
+        }));
+      },
+      addBoard: (board: Board) => {
+        get().saveHistory();
+        set((state) => ({ boards: [...state.boards, board] }));
+      },
+      updateBoard: (updatedBoard: Board) => {
+        get().saveHistory();
+        set((state) => ({
+          boards: state.boards.map((board) =>
+            board.id === updatedBoard.id ? updatedBoard : board
           ),
-        })),
-      deleteBoard: (id: number) =>
-        set((state: BoardState) => ({
-          boards: state.boards.filter((board: Board) => board.id !== id),
-        })),
+        }));
+      },
+      deleteBoard: (id: number) => {
+        get().saveHistory();
+        set((state) => ({
+          boards: state.boards.filter((board) => board.id !== id),
+        }));
+      },
       moveTodo: (
         sourceBoardId: number,
         destinationBoardId: number,
         todo: Todo,
-        destinationIndex: number,
+        destinationIndex: number
       ) =>
         set((state) => {
           const boards = state.boards.map((board) => {
@@ -64,12 +82,34 @@ const useBoardStore = create<BoardState>()(
           updatedBoards.splice(hoverIndex, 0, movedBoard);
           return { boards: updatedBoards };
         }),
+      undo: () =>
+        set((state) => {
+          if (state.past.length === 0) return state;
+          const previous = state.past[state.past.length - 1];
+          const newPast = state.past.slice(0, state.past.length - 1);
+          return {
+            boards: previous,
+            past: newPast,
+            future: [state.boards, ...state.future],
+          };
+        }),
+      redo: () =>
+        set((state) => {
+          if (state.future.length === 0) return state;
+          const next = state.future[0];
+          const newFuture = state.future.slice(1);
+          return {
+            boards: next,
+            past: [...state.past, state.boards],
+            future: newFuture,
+          };
+        }),
     }),
     {
-      name: 'board-storage',
+      name: "board-storage",
       storage: createJSONStorage(() => sessionStorage),
-    },
-  ),
+    }
+  )
 );
 
 export default useBoardStore;
