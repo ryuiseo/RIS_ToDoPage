@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
-import { Board, Todo } from '@/types/board';
-import { useDrag, useDrop } from 'react-dnd';
-import useBoardStore from '@/store/boardStore';
+import React, { useRef, useState } from "react";
+import { Board, Todo } from "@/types/board";
+import { useDrag, useDrop } from "react-dnd";
+import useBoardStore from "@/store/boardStore";
 
 interface DragItem {
   index: number;
@@ -20,8 +20,9 @@ interface TodoItemProps {
     sourceBoardId: number,
     destinationBoardId: number,
     todo: Todo,
-    destinationIndex: number,
+    destinationIndex: number
   ) => void;
+  searchQuery?: string;
 }
 
 const TodoItem: React.FC<TodoItemProps> = ({
@@ -30,6 +31,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
   index,
   moveTodoInBoard,
   moveTodoAnotherBoard,
+  searchQuery = "",
 }) => {
   const updateBoard = useBoardStore((state) => state.updateBoard);
   const [isEditing, setIsEditing] = useState(false);
@@ -38,7 +40,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
   const ref = useRef<HTMLDivElement>(null);
 
   const [{ isDragging }, drag] = useDrag({
-    type: 'TODO',
+    type: "TODO",
     item: { index, todo, boardId: board.id },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
@@ -46,7 +48,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
   });
 
   const [, drop] = useDrop({
-    accept: 'TODO',
+    accept: "TODO",
     hover: (draggedItem: DragItem, monitor) => {
       if (!ref.current) return;
       if (draggedItem.boardId === board.id && draggedItem.index !== index) {
@@ -73,13 +75,19 @@ const TodoItem: React.FC<TodoItemProps> = ({
           draggedItem.boardId,
           board.id,
           draggedItem.todo,
-          destinationIndex,
+          destinationIndex
         );
         draggedItem.boardId = board.id;
       }
     },
   });
   drag(drop(ref));
+  const isMatch =
+    searchQuery &&
+    todo.content.toLowerCase().includes(searchQuery.toLowerCase());
+  const containerClasses = `h-20 border p-2 rounded mb-1 flex items-center bg-white shadow-md ${
+    isMatch ? "bg-yellow-100" : ""
+  }`;
 
   const handleDeleteTodo = () => {
     const updatedTodos = board.todos.filter((t) => t.id !== todo.id);
@@ -90,7 +98,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
   const handleSave = () => {
     if (!newContent.trim()) return;
     const updatedTodos = board.todos.map((t) =>
-      t.id === todo.id ? { ...t, content: newContent.trim() } : t,
+      t.id === todo.id ? { ...t, content: newContent.trim() } : t
     );
     const updatedBoard = { ...board, todos: updatedTodos };
     updateBoard(updatedBoard);
@@ -100,8 +108,8 @@ const TodoItem: React.FC<TodoItemProps> = ({
   return (
     <div
       ref={ref}
-      style={{ opacity: isDragging ? 0.5 : 1, cursor: 'grab' }}
-      className="h-20 border p-2 rounded mb-1 flex items-center bg-white shadow-md "
+      style={{ opacity: isDragging ? 0.5 : 1, cursor: "grab" }}
+      className={containerClasses}
     >
       {isEditing ? (
         <>

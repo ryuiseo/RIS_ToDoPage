@@ -1,11 +1,12 @@
-import { Board } from '@/types/board';
-import BoardCard from './BoardCard';
-import useBoardStore from '@/store/boardStore';
+import { Board } from "@/types/board";
+import BoardCard from "./BoardCard";
+import useBoardStore from "@/store/boardStore";
 
 interface boardListProps {
   boards: Board[];
+  searchQuery: string;
 }
-const BoardList: React.FC<boardListProps> = ({ boards }) => {
+const BoardList: React.FC<boardListProps> = ({ boards, searchQuery }) => {
   const moveBoard = useBoardStore((state) => state.moveBoard);
 
   return (
@@ -17,6 +18,7 @@ const BoardList: React.FC<boardListProps> = ({ boards }) => {
             board={board}
             index={index}
             moveBoard={moveBoard}
+            searchQuery={searchQuery}
           />
         ))}
       </div>

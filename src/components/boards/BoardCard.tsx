@@ -1,8 +1,8 @@
-import { Board, Todo } from '@/types/board';
-import useBoardStore from '@/store/boardStore';
-import { useState, useRef } from 'react';
-import TodoItem from './TodoItem';
-import { useDrag, useDrop } from 'react-dnd';
+import { Board, Todo } from "@/types/board";
+import useBoardStore from "@/store/boardStore";
+import { useState, useRef } from "react";
+import TodoItem from "./TodoItem";
+import { useDrag, useDrop } from "react-dnd";
 
 interface DragBoard {
   index: number;
@@ -12,22 +12,28 @@ interface DragBoard {
 interface BoardCardProps {
   board: Board;
   index: number;
+  searchQuery: string;
   moveBoard: (dragIndex: number, hoverIndex: number) => void;
 }
 
-const BoardCard: React.FC<BoardCardProps> = ({ board, index, moveBoard }) => {
+const BoardCard: React.FC<BoardCardProps> = ({
+  board,
+  index,
+  moveBoard,
+  searchQuery,
+}) => {
   const deleteBoard = useBoardStore((state) => state.deleteBoard);
   const updateBoard = useBoardStore((state) => state.updateBoard);
   const moveTodo = useBoardStore((state) => state.moveTodo);
 
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(board.title);
-  const [newTodoContent, setNewTodoContent] = useState('');
+  const [newTodoContent, setNewTodoContent] = useState("");
 
   const boardRef = useRef<HTMLDivElement | null>(null);
 
   const [{ isDragging }, drag] = useDrag({
-    type: 'BOARD',
+    type: "BOARD",
     item: { id: board.id, index },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
@@ -35,7 +41,7 @@ const BoardCard: React.FC<BoardCardProps> = ({ board, index, moveBoard }) => {
   });
 
   const [, drop] = useDrop<DragBoard>({
-    accept: 'BOARD',
+    accept: "BOARD",
     hover: (draggedItem) => {
       if (draggedItem.index !== index) {
         moveBoard(draggedItem.index, index);
@@ -45,7 +51,7 @@ const BoardCard: React.FC<BoardCardProps> = ({ board, index, moveBoard }) => {
   });
 
   const [, dropTodo] = useDrop({
-    accept: 'TODO',
+    accept: "TODO",
     drop: (item: any, monitor) => {
       if (item.boardId !== board.id) {
         const hoverBoundingRect = boardRef.current?.getBoundingClientRect();
@@ -63,7 +69,7 @@ const BoardCard: React.FC<BoardCardProps> = ({ board, index, moveBoard }) => {
             item.boardId,
             board.id,
             item.todo,
-            destinationIndex,
+            destinationIndex
           );
         }
 
@@ -84,11 +90,11 @@ const BoardCard: React.FC<BoardCardProps> = ({ board, index, moveBoard }) => {
       todos: [...(board.todos || []), newTodo],
     };
     updateBoard(updatedBoard);
-    setNewTodoContent('');
+    setNewTodoContent("");
   };
 
   const handleSaveTitle = () => {
-    if (newTitle.trim() === '') return;
+    if (newTitle.trim() === "") return;
     updateBoard({ ...board, title: newTitle.trim() });
     setIsEditing(false);
   };
@@ -105,7 +111,7 @@ const BoardCard: React.FC<BoardCardProps> = ({ board, index, moveBoard }) => {
     sourceBoardId: number,
     destinationBoardId: number,
     todo: Todo,
-    destinationIndex: number,
+    destinationIndex: number
   ) => {
     moveTodo(sourceBoardId, destinationBoardId, todo, destinationIndex);
   };
@@ -117,7 +123,7 @@ const BoardCard: React.FC<BoardCardProps> = ({ board, index, moveBoard }) => {
       key={board.id}
       ref={boardRef}
       className="relative border rounded p-4 w-120 bg-purple-300 shadow-md"
-      style={{ opacity: isDragging ? 0.5 : 1, cursor: 'grab' }}
+      style={{ opacity: isDragging ? 0.5 : 1, cursor: "grab" }}
     >
       <button
         onClick={() => deleteBoard(board.id)}
@@ -170,6 +176,7 @@ const BoardCard: React.FC<BoardCardProps> = ({ board, index, moveBoard }) => {
               index={index}
               moveTodoInBoard={moveTodoInBoard}
               moveTodoAnotherBoard={moveTodoAnotherBoard}
+              searchQuery={searchQuery}
             />
           ))
         ) : (

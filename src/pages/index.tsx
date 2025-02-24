@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
-import BoardList from '@/components/boards/BoardList';
-import { Board } from '@/types/board';
-import BoardForm from '@/components/boards/BoardForm';
-import useBoardStore from '@/store/boardStore';
+import React, { useState, useMemo } from "react";
+import BoardList from "@/components/boards/BoardList";
+import { Board } from "@/types/board";
+import BoardForm from "@/components/boards/BoardForm";
+import useBoardStore from "@/store/boardStore";
 
 const MainPage = () => {
   const boards = useBoardStore((state) => state.boards);
   const addboards = useBoardStore((state) => state.addBoard);
-  const [boardTitle, setBoardTitle] = useState('');
+  const [boardTitle, setBoardTitle] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleCreateBoard = (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,8 +19,21 @@ const MainPage = () => {
       todos: [],
     };
     addboards(newBoard);
-    setBoardTitle('');
+    setBoardTitle("");
   };
+  const filteredBoards = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return boards;
+    }
+    const lowerQuery = searchQuery.toLowerCase();
+    return boards.filter((board) => {
+      const titleMatch = board.title.toLowerCase().includes(lowerQuery);
+      const todoMatch = board.todos.some((todo) =>
+        todo.content.toLowerCase().includes(lowerQuery)
+      );
+      return titleMatch || todoMatch;
+    });
+  }, [boards, searchQuery]);
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-4 mt-20">To-Do List</h1>
@@ -29,9 +43,11 @@ const MainPage = () => {
           handleCreateBoard={handleCreateBoard}
           boardTitle={boardTitle}
           setBoardTitle={setBoardTitle}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
         />
       </section>
-      <BoardList boards={boards} />
+      <BoardList boards={filteredBoards} searchQuery={searchQuery} />
     </div>
   );
 };
